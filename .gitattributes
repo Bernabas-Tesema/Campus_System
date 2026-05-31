@@ -1,0 +1,2 @@
+# Ensure Linux containers can execute shell scripts even when the repo is edited on Windows
+*.sh text eol=lf
