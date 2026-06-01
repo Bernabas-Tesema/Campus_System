@@ -6,7 +6,10 @@ export default function AdminDashboard() {
   const [reports, setReports] = useState(null);
 
   useEffect(() => {
-    adminAPI.reports().then((res) => setReports(res.data));
+    const load = () => adminAPI.reports().then((res) => setReports(res.data));
+    load();
+    const interval = setInterval(load, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   if (!reports) return <div className="text-center py-12">Loading dashboard...</div>;
@@ -14,10 +17,15 @@ export default function AdminDashboard() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
         {[
           { label: 'Total Orders', value: reports.total_orders, icon: '📦' },
-          { label: 'Revenue', value: formatBirr(reports.total_revenue), icon: '💰' },
+          { label: 'Order Volume', value: formatBirr(reports.total_revenue), icon: '💰' },
+          {
+            label: `Admin Profit (${reports.commission_rate_percent ?? 1.5}%)`,
+            value: formatBirr(reports.admin_commission),
+            icon: '🏛️',
+          },
           { label: 'Students', value: reports.total_students, icon: '🎓' },
           { label: 'Active Lounges', value: reports.total_lounges, icon: '🏪' },
         ].map((stat) => (

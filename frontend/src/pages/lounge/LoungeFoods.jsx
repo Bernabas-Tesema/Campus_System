@@ -44,6 +44,7 @@ export default function LoungeFoods() {
     await foodAPI.create({
       ...form,
       price: parseFloat(form.price),
+      prep_time_minutes: Math.min(180, Math.max(1, parseInt(form.prep_time_minutes, 10) || 15)),
       is_available: true,
       category: form.category ? Number(form.category) : null,
     });
@@ -216,13 +217,19 @@ export default function LoungeFoods() {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Prep time (minutes)</label>
-            <input
-              className="input"
-              type="number"
-              value={form.prep_time_minutes}
-              onChange={(e) => setForm({ ...form, prep_time_minutes: e.target.value })}
-            />
+            <div>
+              <label className="block text-sm font-medium mb-1">Prep time (minutes)</label>
+              <input
+                className="input"
+                type="number"
+                min={1}
+                max={180}
+                required
+                value={form.prep_time_minutes}
+                onChange={(e) => setForm({ ...form, prep_time_minutes: e.target.value })}
+              />
+              <p className="text-xs text-gray-500 mt-1">Used when students order this item.</p>
+            </div>
           </div>
           <div className="sm:col-span-2">
             <button type="submit" className="btn-primary">Save Food Item</button>
@@ -244,7 +251,10 @@ export default function LoungeFoods() {
               <h3 className="font-semibold">{food.name}</h3>
               <span className="text-primary font-bold">{formatBirr(food.price)}</span>
             </div>
-            <p className="text-sm text-gray-500 mb-1">{food.category_name ? `${food.category_name} · ` : ''}{food.meal_time}</p>
+            <p className="text-sm text-gray-500 mb-1">
+              {food.category_name ? `${food.category_name} · ` : ''}{food.meal_time}
+              {' · '}{food.prep_time_minutes ?? 15} min prep
+            </p>
             <p className="text-sm text-gray-500 mb-3">{food.description}</p>
             <button
               onClick={() => toggleAvailability(food)}

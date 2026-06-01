@@ -7,6 +7,10 @@ class Lounge(models.Model):
     description = models.TextField(blank=True)
     staff = models.ManyToManyField('users.User', related_name='managed_lounges', blank=True)
     is_active = models.BooleanField(default=True)
+    prep_time_minutes = models.PositiveIntegerField(
+        default=15,
+        help_text='Default minutes to prepare an order after acceptance.',
+    )
     open_time = models.TimeField(null=True, blank=True)
     close_time = models.TimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

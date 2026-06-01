@@ -9,7 +9,7 @@ class LoungeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lounge
         fields = [
-            'id', 'name', 'location', 'description', 'is_active',
+            'id', 'name', 'location', 'description', 'is_active', 'prep_time_minutes',
             'open_time', 'close_time', 'food_count', 'staff_count', 'created_at',
         ]
 

@@ -25,6 +25,10 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     notes = models.TextField(blank=True)
+    prep_minutes = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text='Prep time set by lounge when order is accepted.',
+    )
     estimated_ready_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -89,6 +93,10 @@ class Payment(models.Model):
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='payment')
     method = models.CharField(max_length=20, choices=METHOD_CHOICES, default='cash')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    admin_commission = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        help_text='Platform fee (1.5% of order total) retained by admin.',
+    )
     transaction_id = models.CharField(max_length=100, blank=True)
     is_paid = models.BooleanField(default=False)
     paid_at = models.DateTimeField(null=True, blank=True)

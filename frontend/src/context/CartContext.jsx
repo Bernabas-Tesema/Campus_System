@@ -1,42 +1,31 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import { loadUserCart, saveUserCart } from '../utils/userStorage';
 
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(() => {
-    const saved = localStorage.getItem('cart');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [loungeId, setLoungeId] = useState(() => {
-    const saved = localStorage.getItem('cart_lounge_id');
-    if (saved) {
-      const parsed = Number(saved);
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-    }
-    const cart = localStorage.getItem('cart');
-    if (cart) {
-      try {
-        const parsed = JSON.parse(cart);
-        const first = Array.isArray(parsed) ? parsed[0] : null;
-        const lounge = first?.lounge;
-        const loungeNumber = typeof lounge === 'number' ? lounge : Number(lounge);
-        return Number.isFinite(loungeNumber) && loungeNumber > 0 ? loungeNumber : null;
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  });
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
+  const [items, setItems] = useState([]);
+  const [loungeId, setLoungeId] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items));
-  }, [items]);
+    if (!userId) {
+      setItems([]);
+      setLoungeId(null);
+      return;
+    }
+    const { items: savedItems, loungeId: savedLounge } = loadUserCart(userId);
+    setItems(savedItems);
+    setLoungeId(savedLounge);
+  }, [userId]);
 
   useEffect(() => {
-    if (loungeId == null) localStorage.removeItem('cart_lounge_id');
-    else if (Number.isFinite(loungeId) && loungeId > 0) localStorage.setItem('cart_lounge_id', String(loungeId));
-    else localStorage.removeItem('cart_lounge_id');
-  }, [loungeId]);
+    if (!userId) return;
+    saveUserCart(userId, items, loungeId);
+  }, [userId, items, loungeId]);
 
   const addItem = (food) => {
     setLoungeId((prevLoungeId) => {
@@ -49,7 +38,7 @@ export function CartProvider({ children }) {
       setItems((prev) => {
         const existing = prev.find((i) => i.id === food.id);
         if (existing) {
-          return prev.map((i) => i.id === food.id ? { ...i, quantity: i.quantity + 1 } : i);
+          return prev.map((i) => (i.id === food.id ? { ...i, quantity: i.quantity + 1 } : i));
         }
         return [...prev, { ...food, quantity: 1 }];
       });
@@ -67,7 +56,7 @@ export function CartProvider({ children }) {
 
   const updateQuantity = (foodId, quantity) => {
     if (quantity <= 0) return removeItem(foodId);
-    setItems((prev) => prev.map((i) => i.id === foodId ? { ...i, quantity } : i));
+    setItems((prev) => prev.map((i) => (i.id === foodId ? { ...i, quantity } : i)));
   };
 
   const clearCart = () => {

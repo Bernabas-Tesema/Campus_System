@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
+import { clearAuthStorage } from '../utils/userStorage';
 
 const AuthContext = createContext(null);
 
@@ -12,7 +13,7 @@ export function AuthProvider({ children }) {
     if (token) {
       authAPI.profile()
         .then((res) => setUser(res.data))
-        .catch(() => localStorage.clear())
+        .catch(() => clearAuthStorage())
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
@@ -39,7 +40,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     const refresh = localStorage.getItem('refresh_token');
     try { await authAPI.logout(refresh); } catch {}
-    localStorage.clear();
+    clearAuthStorage();
     setUser(null);
   };
 

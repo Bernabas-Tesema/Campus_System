@@ -7,7 +7,10 @@ export default function AdminReports() {
   const [reports, setReports] = useState(null);
 
   useEffect(() => {
-    adminAPI.reports().then((res) => setReports(res.data));
+    const load = () => adminAPI.reports().then((res) => setReports(res.data));
+    load();
+    const interval = setInterval(load, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   if (!reports) return <div className="text-center py-12">Loading reports...</div>;
@@ -19,7 +22,18 @@ export default function AdminReports() {
         <div className="card">
           <h2 className="text-lg font-semibold mb-4">Revenue Summary</h2>
           <p className="text-4xl font-bold text-primary">{formatBirr(reports.total_revenue)}</p>
-          <p className="text-sm text-gray-500 mt-1">From {reports.total_orders} total orders</p>
+          <p className="text-sm text-gray-500 mt-1">
+            All placed orders · {reports.total_orders} total
+            {reports.paid_revenue != null && reports.paid_revenue !== reports.total_revenue && (
+              <> · {formatBirr(reports.paid_revenue)} paid online</>
+            )}
+          </p>
+          <div className="mt-4 pt-4 border-t">
+            <p className="text-sm text-gray-500">
+              Admin profit ({reports.commission_rate_percent ?? 1.5}% of each order)
+            </p>
+            <p className="text-2xl font-bold text-secondary mt-1">{formatBirr(reports.admin_commission)}</p>
+          </div>
         </div>
         <div className="card">
           <h2 className="text-lg font-semibold mb-4">System Overview</h2>
@@ -39,8 +53,15 @@ export default function AdminReports() {
                 <span className="font-mono font-medium text-primary">{order.order_key}</span>
                 <span className="text-sm text-gray-500 ml-2">{order.student_name}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="font-medium">{formatBirr(order.total_amount)}</span>
+              <div className="flex items-center gap-3 text-right">
+                <div>
+                  <span className="font-medium block">{formatBirr(order.total_amount)}</span>
+                  {order.payment?.admin_commission != null && (
+                    <span className="text-xs text-gray-500">
+                      Admin {reports.commission_rate_percent ?? 1.5}%: {formatBirr(order.payment.admin_commission)}
+                    </span>
+                  )}
+                </div>
                 <StatusBadge status={order.status} />
               </div>
             </div>

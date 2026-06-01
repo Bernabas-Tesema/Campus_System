@@ -76,6 +76,24 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Email settings
+# Default sender address (can be overridden via env)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='bernabastesemagedore@gmail.com')
+
+# If SMTP is configured via env vars, use SMTP backend; otherwise use console backend in DEBUG.
+SMTP_HOST = config('SMTP_HOST', default='')
+if SMTP_HOST:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = SMTP_HOST
+    EMAIL_PORT = config('SMTP_PORT', default=587, cast=int)
+    EMAIL_HOST_USER = config('SMTP_USER', default='')
+    EMAIL_HOST_PASSWORD = config('SMTP_PASSWORD', default='')
+    EMAIL_USE_TLS = config('SMTP_USE_TLS', default=True, cast=bool)
+    EMAIL_USE_SSL = config('SMTP_USE_SSL', default=False, cast=bool)
+else:
+    if DEBUG:
+        EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',

@@ -16,4 +16,4 @@ class OrderAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ['order', 'method', 'amount', 'is_paid']
+    list_display = ['order', 'method', 'amount', 'admin_commission', 'is_paid']

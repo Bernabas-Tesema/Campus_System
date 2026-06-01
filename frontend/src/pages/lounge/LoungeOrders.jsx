@@ -23,10 +23,9 @@ export default function LoungeOrders() {
 
   useEffect(() => {
     fetchOrders();
-    if (error) return;
     const interval = setInterval(fetchOrders, 5000);
     return () => clearInterval(interval);
-  }, [filter, error]);
+  }, [filter]);
 
   const updateStatus = async (orderId, status) => {
     setError('');
@@ -41,7 +40,7 @@ export default function LoungeOrders() {
 
   if (loading) return <div className="text-center py-12">Loading orders...</div>;
 
-  if (error) {
+  if (error && orders.length === 0) {
     return (
       <div className="card">
         <h1 className="text-2xl font-bold mb-2">Lounge Account</h1>
@@ -53,8 +52,9 @@ export default function LoungeOrders() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
         <h1 className="text-3xl font-bold">Incoming Orders</h1>
+        <p className="text-sm text-gray-500">Prep time is taken from each food item when you accept.</p>
         <select className="input max-w-xs" value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="">All Statuses</option>
           {['pending', 'accepted', 'preparing', 'ready', 'completed', 'rejected'].map((s) => (
@@ -62,6 +62,7 @@ export default function LoungeOrders() {
           ))}
         </select>
       </div>
+      {error && <div className="bg-red-50 text-error p-3 rounded-lg mb-4">{error}</div>}
       <div className="grid gap-4">
         {orders.map((order) => (
           <div key={order.id} className="card">
@@ -72,10 +73,24 @@ export default function LoungeOrders() {
               </div>
               <StatusBadge status={order.status} />
             </div>
+            {order.status === 'ready' && (
+              <p className="text-sm font-medium text-success mb-2">Ready for student pickup</p>
+            )}
+            {['accepted', 'preparing'].includes(order.status) && order.estimated_ready_at && (
+              <p className="text-sm text-primary mb-2">
+                Ready around {new Date(order.estimated_ready_at).toLocaleTimeString()}
+                {order.prep_minutes ? ` (${order.prep_minutes} min — from menu items)` : ''}
+              </p>
+            )}
             <div className="border-t pt-3 mb-3">
               {order.items?.map((item) => (
-                <div key={item.id} className="flex justify-between text-sm py-1">
-                  <span>{item.food_name} x{item.quantity}</span>
+                <div key={item.id} className="flex justify-between text-sm py-1 gap-2">
+                  <span>
+                    {item.food_name} x{item.quantity}
+                    {item.prep_time_minutes != null && (
+                      <span className="text-gray-400 ml-1">({item.prep_time_minutes} min prep)</span>
+                    )}
+                  </span>
                   <span>{formatBirr(item.subtotal)}</span>
                 </div>
               ))}
@@ -84,10 +99,34 @@ export default function LoungeOrders() {
                 <span>{formatBirr(order.total_amount)}</span>
               </div>
             </div>
+            {order.status === 'pending' && (
+              <div className="flex flex-wrap items-center gap-3 mb-3 p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-700">
+                  Estimated prep:{' '}
+                  <strong>{order.estimated_prep_minutes ?? '—'} min</strong>
+                  <span className="text-gray-500"> (longest item in order)</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => updateStatus(order.id, 'accepted')}
+                  className="btn-primary text-sm"
+                >
+                  Accept order
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateStatus(order.id, 'rejected')}
+                  className="text-sm px-3 py-2 rounded-lg bg-red-100 text-error hover:bg-red-200 font-medium"
+                >
+                  Reject
+                </button>
+              </div>
+            )}
             <div className="flex gap-2 flex-wrap">
               {(STATUS_FLOW[order.status] || []).map((nextStatus) => (
                 <button
                   key={nextStatus}
+                  type="button"
                   onClick={() => updateStatus(order.id, nextStatus)}
                   className={`text-sm px-3 py-1.5 rounded-lg font-medium ${
                     nextStatus === 'rejected' ? 'bg-red-100 text-error hover:bg-red-200' : 'bg-primary/10 text-primary hover:bg-primary/20'

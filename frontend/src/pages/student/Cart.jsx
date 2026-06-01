@@ -22,11 +22,12 @@ export default function Cart() {
         setError('Your cart is out of date. Please clear the cart and add items again.');
         return;
       }
-      const res = await orderAPI.create({
+      const payload = {
         lounge_id: resolvedLoungeId,
         items: items.map((i) => ({ food_id: i.id, quantity: i.quantity })),
-        notes,
-      });
+      };
+      if (notes.trim()) payload.notes = notes.trim();
+      const res = await orderAPI.create(payload);
       clearCart();
       navigate('/orders', { state: { newOrder: res.data } });
     } catch (err) {

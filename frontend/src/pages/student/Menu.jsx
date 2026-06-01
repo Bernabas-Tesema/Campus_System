@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { foodAPI } from '../../services/api';
 import { loungeAPI } from '../../services/api';
 import { useCart } from '../../context/CartContext';
@@ -15,6 +16,7 @@ export default function Menu() {
   const [selectedFood, setSelectedFood] = useState(null);
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
+  const navigate = useNavigate();
 
   useEffect(() => {
     Promise.all([
@@ -125,7 +127,7 @@ export default function Menu() {
           <div
             key={food.id}
             className="card hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => setSelectedFood(food)}
+            onClick={() => navigate(`/foods/${food.id}`)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {

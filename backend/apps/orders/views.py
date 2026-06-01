@@ -14,10 +14,15 @@ from apps.lounges.models import Lounge
 from apps.users.models import Student
 from .models import Order, OrderItem, Payment
 from .serializers import OrderSerializer, OrderCreateSerializer, OrderStatusSerializer
+from .services import accept_order_by_lounge, calc_admin_commission, promote_due_orders
 
 
 class OrderListCreateView(generics.ListCreateAPIView):
     serializer_class = OrderSerializer
+
+    def list(self, request, *args, **kwargs):
+        promote_due_orders()
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         user = self.request.user
@@ -78,6 +83,7 @@ class OrderListCreateView(generics.ListCreateAPIView):
 
             Payment.objects.create(
                 order=order, method=method, amount=total,
+                admin_commission=calc_admin_commission(total),
                 transaction_id=payment_result.get('transaction_id', ''),
                 is_paid=payment_result.get('success', False),
                 paid_at=timezone.now() if payment_result.get('success') else None,
@@ -113,6 +119,10 @@ class OrderStatusUpdateView(APIView):
 class LoungeOrderListView(generics.ListAPIView):
     serializer_class = OrderSerializer
 
+    def list(self, request, *args, **kwargs):
+        promote_due_orders()
+        return super().list(request, *args, **kwargs)
+
     def get_queryset(self):
         user = self.request.user
         lounge = user.managed_lounges.first()
@@ -140,7 +150,18 @@ class LoungeOrderStatusView(APIView):
 
         serializer = OrderStatusSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        order.update_status(serializer.validated_data['status'])
+        data = serializer.validated_data
+        new_status = data['status']
+
+        if new_status == 'accepted' and order.status == 'pending':
+            accept_order_by_lounge(order)
+        elif new_status == 'preparing' and order.status == 'pending':
+            accept_order_by_lounge(order)
+            order.refresh_from_db()
+            order.update_status('preparing')
+        else:
+            order.update_status(new_status)
+
         return Response(OrderSerializer(order).data)
 
 
@@ -149,13 +170,21 @@ class AdminReportView(APIView):
 
     def get(self, request):
         from django.db.models import Count, Sum
+        from .services import ADMIN_COMMISSION_PERCENT
+
         total_orders = Order.objects.count()
-        total_revenue = Payment.objects.filter(is_paid=True).aggregate(Sum('amount'))['amount__sum'] or 0
+        # All placed orders (cash/card/mobile) — not only is_paid online payments
+        total_revenue = Payment.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+        paid_revenue = Payment.objects.filter(is_paid=True).aggregate(Sum('amount'))['amount__sum'] or 0
+        admin_commission = Payment.objects.aggregate(Sum('admin_commission'))['admin_commission__sum'] or 0
         status_breakdown = Order.objects.values('status').annotate(count=Count('id'))
-        recent_orders = Order.objects.order_by('-created_at')[:10]
+        recent_orders = Order.objects.select_related('payment').order_by('-created_at')[:10]
         return Response({
             'total_orders': total_orders,
             'total_revenue': float(total_revenue),
+            'paid_revenue': float(paid_revenue),
+            'admin_commission': float(admin_commission),
+            'commission_rate_percent': float(ADMIN_COMMISSION_PERCENT),
             'status_breakdown': list(status_breakdown),
             'recent_orders': OrderSerializer(recent_orders, many=True).data,
             'total_students': Student.objects.count(),

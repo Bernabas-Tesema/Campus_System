@@ -12,23 +12,36 @@ class Observer(ABC):
 
 class StudentNotificationObserver(Observer):
     MESSAGES = {
-        'pending': 'Your order is pending confirmation.',
-        'accepted': 'Your order has been accepted and is being prepared.',
+        'pending': 'Your order was sent to the lounge and is awaiting acceptance.',
         'preparing': 'Your food is being prepared.',
         'ready': 'Your order is ready for pickup!',
         'completed': 'Order completed. Enjoy your meal!',
         'rejected': 'Your order was rejected. Contact the lounge.',
     }
 
+    def _accepted_message(self, order):
+        from apps.orders.services import calc_order_prep_minutes
+        mins = order.prep_minutes or calc_order_prep_minutes(order)
+        lounge_name = order.lounge.name
+        return (
+            f'{lounge_name} accepted your order. '
+            f'Estimated ready in about {mins} minute{"s" if mins != 1 else ""}.'
+        )
+
     def update(self, order, old_status, new_status):
-        if old_status is None:
+        if old_status is None and new_status != 'pending':
             return
-        msg = self.MESSAGES.get(new_status, f'Status updated to {new_status}')
+
+        if new_status == 'accepted':
+            msg = self._accepted_message(order)
+        else:
+            msg = self.MESSAGES.get(new_status, f'Status updated to {new_status}')
+
         NotificationFactory.create(
             'order_status', order.student.user,
             f'Order #{order.order_key}', msg, order=order,
         )
-        LoggerService().info(f'Notified student about order {order.order_key}')
+        LoggerService().info(f'Notified student about order {order.order_key} -> {new_status}')
 
 
 class LoungeNotificationObserver(Observer):
