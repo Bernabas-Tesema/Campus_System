@@ -1,5 +1,63 @@
 # Campus Eat
 
+> Full-stack online meal ordering platform for students and lounge kitchens.
+
+## Overview
+- Backend: Django + Django REST Framework
+- Frontend: React (Vite)
+- Database: PostgreSQL
+- Cache: Redis
+- Reverse proxy: Nginx
+
+This repository contains the backend (`backend/`) and frontend (`frontend/`) applications and a `docker-compose.yml` to run the full stack locally.
+
+See docs for full API and deployment notes: [docs/API.md](docs/API.md#L1-L1), [docs/Architecture.md](docs/Architecture.md#L1-L1), [docs/DEPLOY.md](docs/DEPLOY.md#L1-L1).
+
+## Quick start (Docker)
+1. Build and start services:
+
+```bash
+docker compose up --build
+```
+
+2. Services (defaults):
+- Backend: `http://localhost:8000/` (API root `http://localhost:8000/api/`)
+- Frontend: `http://localhost:3000/` (served via frontend/nginx configuration)
+- Nginx reverse proxy: `http://localhost/` (port 80)
+- Postgres: `localhost:5432` (pgadmin at port 5050)
+
+3. Example: visit `http://localhost:3000` to use the web UI.
+
+## Running locally without Docker
+Backend:
+
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver 0.0.0.0:8000
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Environment
+Create `.env` in `backend/` with required variables (see `.env.example`).
+
+## Contributing
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md#L1-L1).
+
+## Contact
+Project owner: see repo metadata or `DEFAULT_FROM_EMAIL` in `backend/campus_eat/settings.py`.
+# Campus Eat
+
 A component-based web food ordering system for university campuses. Students order food ahead of time from campus lounges, receive a pickup key, and collect their order without waiting in line.
 
 ## Technology Stack

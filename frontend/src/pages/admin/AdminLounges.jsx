@@ -25,6 +25,13 @@ export default function AdminLounges() {
     fetchLounges();
   };
 
+  const handleDeleteLounge = async (lounge) => {
+    const confirmed = window.confirm(`Delete lounge "${lounge.name}"? This cannot be undone.`);
+    if (!confirmed) return;
+    await loungeAPI.adminDelete(lounge.id);
+    setLounges((prev) => prev.filter((l) => l.id !== lounge.id));
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -55,13 +62,20 @@ export default function AdminLounges() {
               <span>{l.staff_count || 0} staff</span>
               <span className={l.is_active ? 'text-success' : 'text-error'}>{l.is_active ? 'Active' : 'Inactive'}</span>
             </div>
-            <div className="mt-4">
+            <div className="mt-4 flex gap-2">
               <button
                 type="button"
                 className={l.is_active ? 'btn-outline text-sm' : 'btn-primary text-sm'}
                 onClick={() => toggleActive(l)}
               >
                 {l.is_active ? 'Deactivate' : 'Activate'}
+              </button>
+              <button
+                type="button"
+                className="btn-outline text-sm text-error border-error hover:bg-red-50"
+                onClick={() => handleDeleteLounge(l)}
+              >
+                Delete
               </button>
             </div>
           </div>

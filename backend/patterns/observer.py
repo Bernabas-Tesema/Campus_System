@@ -14,7 +14,7 @@ class StudentNotificationObserver(Observer):
     MESSAGES = {
         'pending': 'Your order was sent to the lounge and is awaiting acceptance.',
         'preparing': 'Your food is being prepared.',
-        'ready': 'Your order is ready for pickup!',
+        'ready': 'Please pick your food, it is ready.',
         'completed': 'Order completed. Enjoy your meal!',
         'rejected': 'Your order was rejected. Contact the lounge.',
     }

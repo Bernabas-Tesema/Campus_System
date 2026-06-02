@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from .serializers import RegisterSerializer, UserSerializer, AdminUserSerializer
 from .models import Student
 
-from django.core.mail import send_mail
+from django.core.mail import get_connection, send_mail
 from django.conf import settings
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -80,6 +80,11 @@ class PasswordResetView(APIView):
             return Response({'detail': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         users = User.objects.filter(email__iexact=email)
+        mail_timeout = int(getattr(settings, 'EMAIL_TIMEOUT', 5))
+        mail_connection = get_connection(
+            fail_silently=True,
+            timeout=mail_timeout,
+        )
         # Always return success to avoid leaking user existence
         for user in users:
             uid = urlsafe_base64_encode(force_bytes(user.pk))
@@ -91,7 +96,14 @@ class PasswordResetView(APIView):
                       f'You requested a password reset. Click the link below to reset your password:\n\n{reset_link}\n\n' \
                       'If you did not request this, you can safely ignore this email.'
             try:
-                send_mail(subject, message, getattr(settings, 'DEFAULT_FROM_EMAIL', None), [user.email], fail_silently=True)
+                send_mail(
+                    subject,
+                    message,
+                    getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+                    [user.email],
+                    fail_silently=True,
+                    connection=mail_connection,
+                )
             except Exception:
                 # don't fail the request if email sending fails
                 pass

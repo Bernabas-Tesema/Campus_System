@@ -7,4 +7,5 @@ export const loungeAPI = {
   adminList: () => api.get('/admin/lounges/'),
   adminCreate: (data) => api.post('/admin/lounges/', data),
   adminUpdate: (id, data) => api.patch(`/admin/lounges/${id}/`, data),
+  adminDelete: (id) => api.delete(`/admin/lounges/${id}/`),
 };
